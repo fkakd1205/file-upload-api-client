@@ -1,3 +1,3 @@
 # File-upload-api-client
 
-리액트에서 file-upload-api를 사용해 구현
+리액트로 file-upload-api 사용

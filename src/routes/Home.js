@@ -1,5 +1,9 @@
 import React from 'react';
 import axios from 'axios';
+import styled from 'styled-components';
+
+const Container = styled.div`
+`;
 
 class Home extends React.Component {
 
@@ -44,7 +48,7 @@ class Home extends React.Component {
    render() {
 
       return (
-         <div>
+         <Container>
             Home1
             <div>
                <img src={this.state.image} />
@@ -58,7 +62,7 @@ class Home extends React.Component {
                   <input type="button" value="확인" />
                </form>
             </div>
-         </div>
+         </Container>
       );
    }
 }
