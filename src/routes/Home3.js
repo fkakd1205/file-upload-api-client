@@ -1,57 +1,83 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import styled from 'styled-components';
-import { Button } from '@material-ui/core';
+import Image from './Image';
+import Dialog from '@material-ui/core/Dialog';
+import MuiDialogTitle from '@material-ui/core/DialogTitle';
+import MuiDialogContent from '@material-ui/core/DialogContent';
 
 const Container = styled.div`
-    color: black;
-    position: fixed;
-    top: 0;
-    left: 0;
+    font-family: "gowun";
+`;
+
+const Header = styled.div`
+    color: white;
     width: 100%;
-    height: 50px;
-    align-items: center;
-    padding: 0px 10px;
-    background-color: rgba(96, 125, 139, 0.67);
-    box-shadow: 0px 1px 5px 2px rgba(107, 133, 146, 0.8);
+    height: 55px;
+    display: flex;
+    background-color: rgba(0, 0, 0, 0.4);
+    box-shadow: 0px 1px 7px 4px rgba(0, 0, 2, 0.2);
+    text-align: right;
 `;
 
 const Form = styled.form`
     width: 100%;
-    align-items: center;
     margin: 10px;
+    margin-right: 20px;
+`;
+
+const UploadButton = styled.label`
+    display: inline-block;
+    padding: 6px;
+    color: #999;
+    vertical-align: middle;
+    background-color: #fdfdfd;
+    border-radius: 3px;
+    transition: opacity 0.1s linear;
+    &:hover {
+        opacity: 0.8;
+        cursor: pointer;
+    }
 `;
 
 const Input = styled.input`
     font-size: 20px;
     width: 100%;
-    font-family: "gowun";
-`;
-
-const ImageFile = styled.img`
-    width: 100%;
-    border-radius: 2px;
+    display: none;
 `;
 
 const ImageContainer = styled.ul`
-    display: flex;
-    :not(:last-child){
-        margin-bottom: 50px;
+    margin-top: 25px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 200px);
+    grid-gap: 50px;
+    list-style: none;
+
+    @media only screen and (max-width:1010px){
+        grid-gap: 30px;
     }
 `;
 
+// const ImageFile = styled.img`
+//     width: 100%;
+//     height: 200px;
+//     background-size: cover;
+//     border-radius: 5px;
+//     background-position: center center;
+//     transition: opacity 0.1s linear;
+
+//     @media only screen and (max-width:1010px){
+//         width: 80%;
+//         height: 180px;
+//     }
+// `;
+
 const Item = styled.li`
-    text-align: center;
-    list-style: none;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, 200px);
-    margin-right: 40px;
-    box-shadow: 0px 1px 5px 2px rgba(0, 0, 0, 0.2);
-    transition: opacity 0.1s linear;
+    margin-bottom: 10px;
+    position: relative;
     &:hover {
-        ${ImageFile} {
-            opacity: 0.5;
-        }
+        opacity: 0.5;
+        cursor: pointer;
     }
 `;
 
@@ -59,6 +85,8 @@ const Item = styled.li`
 const Home3 = () => {
     
     const [images, setImages] = useState(null);
+    const [open, setOpen] = React.useState(false);
+    const [imageInfo, setImageInfo] = useState(null);
 
     useEffect(() => {
     }, [])
@@ -74,6 +102,9 @@ const Home3 = () => {
             uploadFilesToCloud: async function (e) {
                 const formData = new FormData();
 
+                // 파일을 선택하지 않은 경우
+                if(e.target.files.length === 0) return;
+
                 let addFiles = e.target.files;
 
                 for (let i = 0; i < addFiles.length; i++) {
@@ -82,7 +113,7 @@ const Home3 = () => {
 
                 await axios.post("/api/v1/file-upload/uploadFilesToCloud", formData, config)
                     .then(res => {
-                        if (res.status == 200 && res.data && res.data.message == 'success') {
+                        if (res.status === 200 && res.data && res.data.message === 'success') {
                             if (images && images.length >= 1) {
                                 setImages(images.concat(res.data.data));
                             } else {
@@ -92,7 +123,7 @@ const Home3 = () => {
                     })
                     .catch(err => {
                         console.log(err);
-                        alert('undefined error. : uploadFilesToCloud');
+                        alert('undefined error. : uploadFilesToLocal');
                     })
             }
         }
@@ -107,6 +138,17 @@ const Home3 = () => {
                         await __handleDataConnect().uploadFilesToCloud(e);
                     }
                 }
+            },
+            imageInfo: function (e) {
+                return {
+                    handleOpen: function (e) {
+                        setImageInfo(e.target.title);
+                        setOpen(true);
+                    },
+                    handleClose: function () {
+                        setOpen(false);
+                    }
+                }
             }
         }
     }
@@ -114,21 +156,30 @@ const Home3 = () => {
     return (
         <>
             <Container>
-                <Form>
-                    <Input id="upload-file-input" type="file" accept="image/*" onChange={(e) => __handleEventControl().uploadFileData().submit(e)} multiple label="upload"/>
-                </Form>
+                <Header>
+                    <Form>
+                        <UploadButton htmlFor="upload-file-input">상품 이미지 업로드</UploadButton>
+                        <Input id="upload-file-input" type="file" accept="image/*" onChange={(e) => __handleEventControl().uploadFileData().submit(e)} multiple />
+                    </Form>
+                </Header>
                 <ImageContainer>
                     {images && images.map((r, index) => {
                         return (
-                            <div>
-                                <Button color="primary">상품{index+1}</Button>
-                                <Item key={index}>
-                                    <ImageFile src={r.fileUploadUri} title={r.fileName}/>
-                                </Item>
-                            </div>
+                            <Item key={index} onClick={(e) => __handleEventControl().imageInfo().handleOpen(e)}>
+                                {/* <ImageFile src={r.fileUploadUri} title={r.fileName} /> */}
+                                <Image image={r} index={index}/>
+                            </Item>
                         )
                     })}
                 </ImageContainer>
+                <Dialog onClose={() => __handleEventControl().imageInfo().handleClose()} aria-labelledby="customized-dialog-title" open={open}>
+                    <MuiDialogTitle id="customized-dialog-title" onClose={() => __handleEventControl().imageInfo().handleClose()}>
+                         Info
+                    </MuiDialogTitle>
+                    <MuiDialogContent dividers>
+                        {imageInfo}
+                    </MuiDialogContent>
+                </Dialog>
             </Container>
         </>
     );
