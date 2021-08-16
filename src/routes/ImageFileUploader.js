@@ -166,7 +166,6 @@ const Home3 = () => {
                     {images && images.map((r, index) => {
                         return (
                             <Item key={index} onClick={(e) => __handleEventControl().imageInfo().handleOpen(e)}>
-                                {/* <ImageFile src={r.fileUploadUri} title={r.fileName} /> */}
                                 <Image image={r} index={index}/>
                             </Item>
                         )

@@ -2,8 +2,9 @@ import React from 'react';
 import {HashRouter, BrowserRouter as Router, Route} from 'react-router-dom';
 import Home from './routes/Home'
 import Home2 from './routes/Home2';
-import Home3 from './routes/Home3';
+import ImageFileUploader from './routes/ImageFileUploader';
 import ExcelFileUpload from './routes/excel/ExcelFileUpload';
+import NaverOrderUpload from './routes/excel/NaverOrderUpload';
 import './App.css';
 
 function App() {
@@ -11,8 +12,9 @@ function App() {
     <Router>
       <Route path="/" exact component={Home}></Route>
       <Route path="/home2" exact component={Home2}></Route>
-      <Route path="/home3" exact component={Home3}></Route>
+      <Route path="/Image-upload" exact component={ImageFileUploader}></Route>
       <Route path="/excel-upload" exact component={ExcelFileUpload}></Route>
+      <Route path="/order-excel" exact component={NaverOrderUpload}></Route>
     </Router>
   );
 }
