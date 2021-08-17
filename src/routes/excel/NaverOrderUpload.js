@@ -44,6 +44,7 @@ const Input = styled.input`
 
 const DataContainer = styled.ul`
     padding-top: 15px;
+    padding-bottom: 15px;
     vertical-align: middle;
     background-color: rgba(220, 220, 220, 0.5);
     list-style: none;
@@ -167,7 +168,7 @@ const ExcelFileUpload = (props) => {
                 <Header>
                     <Form>
                         <UploadButton htmlFor="upload-file-input">발주서 엑셀 파일 업로드</UploadButton>
-                        <Input id="upload-file-input" type="file" accept=".xls,.xlsx" onChange={(e) => __handleEventControl().uploadExcelData().submit(e)} multiple />
+                        <Input id="upload-file-input" type="file" accept=".xls,.xlsx" onClick={(e) => e.target.value=''} onChange={(e) => __handleEventControl().uploadExcelData().submit(e)} multiple />
                     </Form>
                     <Form>
                         <UploadButton htmlFor="download-file-input">발주서 엑셀 파일 다운로드</UploadButton>
