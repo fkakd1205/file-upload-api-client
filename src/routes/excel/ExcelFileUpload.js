@@ -74,6 +74,12 @@ const ExcelFileUpload = (props) => {
         }
     };
 
+    const config2 = {
+        headers: {
+            "content-type": "application/json"
+        }
+    }
+
     const __handleDataConnect = () => {
         return {
             uploadExcelFile: async function (e) {
@@ -119,6 +125,39 @@ const ExcelFileUpload = (props) => {
                     .catch(err => {
                         console.log(err)
                     });
+            },
+            uploadNaverOrderExcelFile: async function (e) {
+                const formData = new FormData();
+
+                // 파일을 선택하지 않은 경우
+                if(e.target.files.length === 0) return;
+
+                let addFiles = e.target.files;
+
+                for (let i = 0; i < addFiles.length; i++) {
+                    formData.append('files', addFiles[i]);
+                }
+
+                await axios.post("/api/v1/naver-order/uploadExcelsToCloud", formData, config)
+                    .then(res => {
+                        if (res.status === 200 && res.data && res.data.message === 'success') {
+
+                            console.log(res.data.data[0]);
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        alert('undefined error. : uploadExcelFile');
+                    })
+            },
+            savedExcelDetailData: async function (data) {
+                await axios.post("/api/v1/detail-data/one", data, config2)
+                    .then(res => {
+                        if (res.status === 200 && res.data && res.data.message === 'success') {
+
+                            console.log(res);
+                        }
+                    })
             }
         }
     }
@@ -142,6 +181,14 @@ const ExcelFileUpload = (props) => {
                         await __handleDataConnect().downloadExcelFile(data);
                     }
                 }
+            },
+            uploadNaverOrderExcelData: function () {
+                return{
+                    submit: async function (e) {
+                        e.preventDefault();
+                        await __handleDataConnect().uploadNaverOrderExcelFile(e);
+                    }
+                }
             }
         }
     }
@@ -155,8 +202,12 @@ const ExcelFileUpload = (props) => {
                         <Input id="upload-file-input" type="file" accept=".xls,.xlsx" onChange={(e) => __handleEventControl().uploadExcelData().submit(e)} multiple />
                     </Form>
                     <Form>
-                        <UploadButton htmlFor="download-file-input">엑셀 파일 다운로드</UploadButton>
-                        <Input id="download-file-input" onClick={(e) => __handleEventControl().downloadExcelData().submit(e)} multiple />
+                        <UploadButton htmlFor="download-file-download">엑셀 파일 다운로드</UploadButton>
+                        <Input id="download-file-download" onClick={(e) => __handleEventControl().downloadExcelData().submit(e)} multiple />
+                    </Form>
+                    <Form>
+                        <UploadButton htmlFor="order-upload-file">네이버 배송 준비 엑셀 파일 업로드</UploadButton>
+                        <Input id="order-upload-file" type="file" accept=".xls,.xlsx" onChange={(e) => __handleEventControl().uploadNaverOrderExcelData().submit(e)} multiple />
                     </Form>
                 </Header>
                 <DataContainer className="container">

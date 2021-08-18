@@ -5,6 +5,7 @@ import Home2 from './routes/Home2';
 import ImageFileUploader from './routes/ImageFileUploader';
 import ExcelFileUpload from './routes/excel/ExcelFileUpload';
 import NaverOrderUpload from './routes/excel/NaverOrderUpload';
+import NaverOrderExcelUpload from './routes/excel/NaverOrderExcelUpload';
 import './App.css';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
       <Route path="/Image-upload" exact component={ImageFileUploader}></Route>
       <Route path="/excel-upload" exact component={ExcelFileUpload}></Route>
       <Route path="/order-excel" exact component={NaverOrderUpload}></Route>
+      <Route path="/naver-order" exact component={NaverOrderExcelUpload}></Route>
     </Router>
   );
 }

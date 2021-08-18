@@ -80,7 +80,7 @@ const ColElement = styled.div`
     width: 30%;
 `;
 
-const ExcelFileUpload = (props) => {
+const NaverOrderExcelUpload = (props) => {
 
     const [excelData, setExcelData] = useState(null);
 
@@ -104,8 +104,9 @@ const ExcelFileUpload = (props) => {
                     formData.append('file', addFiles[i]);
                 }
 
-                await axios.post("/api/v1/order-excel/upload", formData, config)
+                await axios.post("/api/v1/naver-order/upload", formData, config)
                     .then(res => {
+                        console.log(res.data.data);
                         if (res.status === 200 && res.data && res.data.message === 'success') {
                             if (excelData && excelData.length >= 1) {
                                 setExcelData(excelData.concat(res.data.data));
@@ -120,7 +121,7 @@ const ExcelFileUpload = (props) => {
                     })
             },
             downloadExcelFile: async function (data) {
-                await axios.post(`/api/v1/order-excel/download`, data, {
+                await axios.post(`/api/v1/naver-order/download`, data, {
                     responseType: 'blob'
                 })
                     .then(res => {
@@ -128,7 +129,7 @@ const ExcelFileUpload = (props) => {
                         const url = window.URL.createObjectURL(new Blob([res.data], { type: res.headers['content-type'] }));
                         const link = document.createElement('a');
                         link.href = url;
-                        link.setAttribute('download', "발주서양식.xlsx");
+                        link.setAttribute('download', `발주서양식.xlsx`);
                         document.body.appendChild(link);
                         link.click();
                     })
@@ -178,6 +179,12 @@ const ExcelFileUpload = (props) => {
                 <DataContainer className="container">
                     <DataListTitle className="row">
                         <ColElement className="col">
+                            <span>주문번호</span>
+                        </ColElement>
+                        <ColElement className="col">
+                            <span>상품주문번호</span>
+                        </ColElement>
+                        <ColElement className="col">
                             <span>받는사람</span>
                         </ColElement>
                         <ColElement className="col">
@@ -213,6 +220,9 @@ const ExcelFileUpload = (props) => {
                         <ColElement className="col">
                             <span>수량(A타입)</span>
                         </ColElement>
+                        <ColElement className="col">
+                            <span>총 상품주문번호</span>
+                        </ColElement>
                     </DataListTitle>
                     {excelData && excelData.map((data) => {
                         return (
@@ -220,6 +230,12 @@ const ExcelFileUpload = (props) => {
                                 key={data.id}
                                 className="row"
                             >
+                                <DataText className="col">
+                                    <span>{data.orderNumber}</span>
+                                </DataText>
+                                <DataText className="col">
+                                    <span>{data.prodOrderNumber}</span>
+                                </DataText>
                                 <DataText className="col">
                                     <span>{data.receiver}</span>
                                 </DataText>
@@ -245,16 +261,33 @@ const ExcelFileUpload = (props) => {
                                     <span>{data.senderContact1}</span>
                                 </DataText>
                                 <DataText className="col">
-                                    <span>{data.prodDetail1}</span>
+                                {data.prodDetailInfos.map((infoData) => {
+                                    return(
+                                        <>
+                                            <span>{infoData.prodDetail1}</span>
+                                            <br />
+                                        </>
+                                    )}
+                                )}
                                 </DataText>
                                 <DataText className="col">
-                                    <span>{data.unit1}</span>
+                                {data.prodDetailInfos.map((infoData) => {
+                                    return(
+                                        <>
+                                            <span>{infoData.unit1}</span>
+                                            <br />
+                                        </>
+                                    )}
+                                )}
                                 </DataText>
                                 <DataText className="col">
                                     <span>{data.deliveryMessage}</span>
                                 </DataText>
                                 <DataText className="col">
                                     <span>{data.unitA}</span>
+                                </DataText>
+                                <DataText className="col">
+                                    <span>{data.prodOrderNumbers}</span>
                                 </DataText>
                             </DataList>
                         )
@@ -265,4 +298,4 @@ const ExcelFileUpload = (props) => {
     );
 }
 
-export default ExcelFileUpload;
+export default NaverOrderExcelUpload;
