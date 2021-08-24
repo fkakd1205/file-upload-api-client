@@ -141,7 +141,6 @@ const ExcelFileUpload = (props) => {
                 await axios.post("/api/v1/naver-order/uploadExcelsToCloud", formData, config)
                     .then(res => {
                         if (res.status === 200 && res.data && res.data.message === 'success') {
-
                             console.log(res.data.data[0]);
                         }
                     })

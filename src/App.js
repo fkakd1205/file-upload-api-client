@@ -6,7 +6,9 @@ import ImageFileUploader from './routes/ImageFileUploader';
 import ExcelFileUpload from './routes/excel/ExcelFileUpload';
 import NaverOrderUpload from './routes/excel/NaverOrderUpload';
 import NaverOrderExcelUpload from './routes/excel/NaverOrderExcelUpload';
+import DeliveryReadyUpload from './routes/delivery_ready/DeliveryReadyUpload';
 import './App.css';
+import DeliveryReadyView from './routes/delivery_ready/DeliveryReadyView';
 
 function App() {
   return (
@@ -17,6 +19,9 @@ function App() {
       <Route path="/excel-upload" exact component={ExcelFileUpload}></Route>
       <Route path="/order-excel" exact component={NaverOrderUpload}></Route>
       <Route path="/naver-order" exact component={NaverOrderExcelUpload}></Route>
+      <Route path="/delivery-ready" exact component={DeliveryReadyUpload}></Route>
+      <Route path="/delivery-ready-view" exact component={DeliveryReadyView}></Route>
+
     </Router>
   );
 }
