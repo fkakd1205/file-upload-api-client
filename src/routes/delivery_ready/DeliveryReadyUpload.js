@@ -12,8 +12,8 @@ const Header = styled.div`
     height: 55px;
     display: flex;
     border-radius: 5px;
-    background-color: rgba(000, 102, 153, 0.9);
-    box-shadow: 0px 1px 4px 2px rgba(10, 10, 10, 0.4);
+    background-color: rgb(153, 191, 204, 0.9);
+    box-shadow: 0px 1px 4px 2px rgba(10, 10, 10, 0.2);
 `;
 
 const Form = styled.form`
