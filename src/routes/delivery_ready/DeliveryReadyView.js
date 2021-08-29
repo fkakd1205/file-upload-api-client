@@ -1,7 +1,9 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import styled from 'styled-components';
+import styled, { ThemeProvider } from 'styled-components';
 import Checkbox from '@material-ui/core/Checkbox';
+import moment from 'moment';
+import DownloadLoading from "../loading/DownloadLoading";
 
 const Container = styled.div`
     font-family: "gowun";
@@ -99,7 +101,8 @@ const DeliveryReadyView = () => {
     const [releasedData, setReleasedData] = useState(null);
     const [checkedOrderList, setCheckedOrderList] = useState([]);
     const [downloadOrderList, setDownloadOrderList] = useState([]);
-    const [currentDate, setCurrentDate] = useState("2021-08-26");
+    const [currentDate, setCurrentDate] = useState(null);
+    const [downloadLoading, setDownloadLoading] = useState(false);
 
     useEffect(() => {
         async function fetchInit() {
@@ -124,7 +127,7 @@ const DeliveryReadyView = () => {
                     })
             },
             getDeliveryReadyReleasedData: async function () {
-                const currentDate = document.getElementById("current-date").defaultValue;
+                const currentDate = document.getElementById("current-date").value;
                 await axios.get(`/api/v1/delivery-ready/view/released/${currentDate}`)
                     .then(res => {
                         if (res.status == 200 && res.data && res.data.message == 'success') {
@@ -149,9 +152,14 @@ const DeliveryReadyView = () => {
                         link.setAttribute('download', `발주서양식.xlsx`);
                         document.body.appendChild(link);
                         link.click();
+
+                        __handleDataConnect().getDeliveryReadyReleasedData();
+                        __handleDataConnect().getDeliveryReadyUnreleasedData();
+                        setDownloadLoading(false);
                     })
                     .catch(err => {
-                        console.log(err)
+                        console.log(err);
+                        setDownloadLoading(false);
                     });
             }
         }
@@ -165,7 +173,13 @@ const DeliveryReadyView = () => {
                         e.preventDefault();
                         let data = await __handleEventControl().checkedOrderList().getCheckedData();
 
-                        await __handleDataConnect().downloadOrderForm(downloadOrderList.concat(data));
+                        if(data.length || downloadOrderList.length){
+                            setDownloadLoading(true);
+                            await __handleDataConnect().downloadOrderForm(downloadOrderList.concat(data));
+                        }
+                        else{
+                            alert("no checked order data");
+                        }
                     }
                 }
             },
@@ -213,12 +227,23 @@ const DeliveryReadyView = () => {
                         return dataList;
                     }
                 }
+            },
+            changeDatePicker: function () {
+                return {
+                    changeReleasedData : async function (e) {
+                        setCurrentDate(e.target.value);
+
+                        await __handleDataConnect().getDeliveryReadyReleasedData();
+                    }
+                }
             }
+
         }
     }
 
     return (
         <>
+            <DownloadLoading open={downloadLoading} />
             <Container>
                 <Header>
                     <Form>
@@ -329,7 +354,7 @@ const DeliveryReadyView = () => {
                                         <span>{data.deliveryReadyItem.destination}</span>
                                     </DataText>
                                     <DataText className="col">
-                                        <span>{data.deliveryReadyItem.tranportNumber}</span>
+                                        <span></span>
                                     </DataText>
                                     <DataText className="col">
                                         <span>{data.deliveryReadyItem.prodName}</span>
@@ -374,7 +399,7 @@ const DeliveryReadyView = () => {
                     <BoardContainer>
                         <div>
                             <BoardTitle>출고 데이터</BoardTitle>
-                            <input id="current-date" type="date" defaultValue="2021-08-26" ></input>
+                            <input id="current-date" type="date" defaultValue={moment().format("YYYY-MM-DD")} onChange={(e) => __handleEventControl().changeDatePicker().changeReleasedData(e) } value={currentDate}></input>
                         </div>
                         <DataListTitle className="row">
                             <ColElement className="col">

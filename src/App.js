@@ -15,7 +15,7 @@ function App() {
     <Router>
       <Route path="/" exact component={Home}></Route>
       <Route path="/home2" exact component={Home2}></Route>
-      <Route path="/Image-upload" exact component={ImageFileUploader}></Route>
+      <Route path="/image-upload" exact component={ImageFileUploader}></Route>
       <Route path="/excel-upload" exact component={ExcelFileUpload}></Route>
       <Route path="/order-excel" exact component={NaverOrderUpload}></Route>
       <Route path="/naver-order" exact component={NaverOrderExcelUpload}></Route>
