@@ -4,6 +4,12 @@ import styled, { ThemeProvider } from 'styled-components';
 import Checkbox from '@material-ui/core/Checkbox';
 import moment from 'moment';
 import DownloadLoading from "../loading/DownloadLoading";
+import DatePicker from "react-datepicker";
+import {DateRangePicker, DateRange} from "react-date-range";
+
+import "react-datepicker/dist/react-datepicker.css";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 const Container = styled.div`
     font-family: "gowun";
@@ -103,11 +109,25 @@ const DeliveryReadyView = () => {
     const [downloadOrderList, setDownloadOrderList] = useState([]);
     const [currentDate, setCurrentDate] = useState(null);
     const [downloadLoading, setDownloadLoading] = useState(false);
+    const [dateRange, setDateRange] = useState([null, null]);
+    const [startDate, endDate] = dateRange;
+    const [selectionRange, setSelectionRange] = useState(
+        {
+            startDate: new Date(),
+            endDate: new Date(),
+            key: 'selection'
+        }
+    );
+    // const selectionRange ={
+    //         startDate: new Date(),
+    //         endDate: new Date(),
+    //         key: 'selection',
+    //     };
 
     useEffect(() => {
         async function fetchInit() {
             await __handleDataConnect().getDeliveryReadyUnreleasedData();
-            await __handleDataConnect().getDeliveryReadyReleasedData();
+            // await __handleDataConnect().getDeliveryReadyReleasedData();
         }
         fetchInit();
     }, []);
@@ -126,20 +146,20 @@ const DeliveryReadyView = () => {
                         alert('undefined error. : getDeliveryReadyUnreleasedData');
                     })
             },
-            getDeliveryReadyReleasedData: async function () {
-                const currentDate = document.getElementById("current-date").value;
-                await axios.get(`/api/v1/delivery-ready/view/released/${currentDate}`)
-                    .then(res => {
-                        if (res.status == 200 && res.data && res.data.message == 'success') {
-                            setReleasedData(res.data.data);
-                            setDownloadOrderList(res.data.data);
-                        }
-                    })
-                    .catch(err => {
-                        console.log(err);
-                        alert('undefined error. : getDeliveryReadyReleasedData');
-                    })
-            },
+            // getDeliveryReadyReleasedData: async function () {
+            //     const currentDate = document.getElementById("current-date").value;
+            //     await axios.get(`/api/v1/delivery-ready/view/released/${currentDate}`)
+            //         .then(res => {
+            //             if (res.status == 200 && res.data && res.data.message == 'success') {
+            //                 setReleasedData(res.data.data);
+            //                 setDownloadOrderList(res.data.data);
+            //             }
+            //         })
+            //         .catch(err => {
+            //             console.log(err);
+            //             alert('undefined error. : getDeliveryReadyReleasedData');
+            //         })
+            // },
             downloadOrderForm: async function (data) {
                 await axios.post(`/api/v1/delivery-ready/view/download`, data, {
                     responseType: 'blob'
@@ -153,14 +173,62 @@ const DeliveryReadyView = () => {
                         document.body.appendChild(link);
                         link.click();
 
-                        __handleDataConnect().getDeliveryReadyReleasedData();
+                        // __handleDataConnect().getDeliveryReadyReleasedData();
                         __handleDataConnect().getDeliveryReadyUnreleasedData();
+                        __handleDataConnect().getDeliveryReadyRelease();
                         setDownloadLoading(false);
                     })
                     .catch(err => {
                         console.log(err);
                         setDownloadLoading(false);
                     });
+            },
+            getDeliveryReadyRelease: async function (start, end) {
+
+                var date1 = new Date(start);
+                date1.setDate(date1.getDate()+1);
+                date1.setHours(0, 0, 0, 0);
+
+                var date2 = new Date(end);
+                date2.setDate(date2.getDate()+1)
+                date2.setHours(23, 59, 59, 59);
+                // date2.setHours(23, 59, 59, 59);
+                
+                // console.log(date1 + " " + date2);
+
+                date1 = JSON.stringify(date1);
+                date2 = JSON.stringify(date2);
+
+                // console.log(date1 + " " + date2);
+                
+                date1 = date1.substring(1, 11) + " " + date1.substring(12, 20);
+                date2 = date2.substring(1, 11) + " " + date2.substring(12, 20);
+                
+                await axios.get(`/api/v1/delivery-ready/view/release/${date1}&&${date2}`)
+                    .then(res => {
+                        console.log(res);
+                        if (res.status == 200 && res.data && res.data.message == 'success') {
+                            setReleasedData(res.data.data);
+                            setDownloadOrderList(res.data.data);
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        alert('undefined error. : getDeliveryReadyReleased');
+                    })
+
+                // await axios.get(`/api/v1/delivery-ready/view/release/${date1}&&${date2}`)
+                //     .then(res => {
+                //         console.log(res);
+                //         if (res.status == 200 && res.data && res.data.message == 'success') {
+                //             setReleasedData(res.data.data);
+                //             setDownloadOrderList(res.data.data);
+                //         }
+                //     })
+                //     .catch(err => {
+                //         console.log(err);
+                //         alert('undefined error. : getDeliveryReadyReleased');
+                //     })
             }
         }
     }
@@ -219,11 +287,14 @@ const DeliveryReadyView = () => {
                     },
                     getCheckedData: async function () {
                         let dataList = [];
-                        unReleasedData.forEach( order => {
-                            if (checkedOrderList.includes(order.deliveryReadyItem.id)) {
-                                dataList.push(order);
-                            }
-                        })
+
+                        if(unReleasedData){
+                            unReleasedData.forEach( order => {
+                                if (checkedOrderList.includes(order.deliveryReadyItem.id)) {
+                                    dataList.push(order);
+                                }
+                            })
+                        }
                         return dataList;
                     }
                 }
@@ -235,6 +306,22 @@ const DeliveryReadyView = () => {
 
                         await __handleDataConnect().getDeliveryReadyReleasedData();
                     }
+                }
+            },
+            changeDateRangePicker: function () {
+                return {
+                    changeReleasedData : async function (date) {
+                        setSelectionRange(date.selection);
+
+                        // await __handleDataConnect().getDeliveryReadyReleasedData(date.selection.startDate, date.selection.endDate);
+                    }
+                    // changeReleasedData : async function (date) {
+                    //     setDateRange(date);
+
+                    //     console.log(date);
+                        
+                    //     await __handleDataConnect().getDeliveryReadyReleasedData(date);
+                    // }
                 }
             }
 
@@ -397,9 +484,26 @@ const DeliveryReadyView = () => {
                         })}
                     </BoardContainer>
                     <BoardContainer>
+                        <DateRange
+                                editableDateInputs={true}
+                                onChange={(date) => __handleEventControl().changeDateRangePicker().changeReleasedData(date)}
+                                moveRangeOnFirstSelection={false}
+                                local="ko"
+                                ranges={[selectionRange]}
+                            />
+                        <button onClick={() => __handleDataConnect().getDeliveryReadyRelease(selectionRange.startDate, selectionRange.endDate)}>확인</button>
                         <div>
                             <BoardTitle>출고 데이터</BoardTitle>
-                            <input id="current-date" type="date" defaultValue={moment().format("YYYY-MM-DD")} onChange={(e) => __handleEventControl().changeDatePicker().changeReleasedData(e) } value={currentDate}></input>
+                            {/* <DatePicker
+                                id="date-range" 
+                                selectsRange={true}
+                                startDate={startDate}
+                                endDate={endDate}
+                                onChange={(update) => {
+                                    __handleEventControl().changeDateRangePicker().changeReleasedData(update)
+                                }}
+                                withPortal /> */}
+                            {/* <input id="current-date" type="date" defaultValue={moment().format("YYYY-MM-DD")} onChange={(e) => __handleEventControl().changeDatePicker().changeReleasedData(e) } value={currentDate}></input> */}
                         </div>
                         <DataListTitle className="row">
                             <ColElement className="col">
