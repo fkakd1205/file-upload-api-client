@@ -1,18 +1,18 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import styled, { ThemeProvider } from 'styled-components';
+import styled from 'styled-components';
 import Checkbox from '@material-ui/core/Checkbox';
-import moment from 'moment';
 import DownloadLoading from "../loading/DownloadLoading";
-import DatePicker from "react-datepicker";
-import {DateRangePicker, DateRange} from "react-date-range";
+import {DateRange} from "react-date-range";
+import Dialog from '@material-ui/core/Dialog';
+import DeleteForeverTwoToneIcon from '@material-ui/icons/DeleteForeverTwoTone';
 
 import "react-datepicker/dist/react-datepicker.css";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
 const Container = styled.div`
-    font-family: "gowun";
+    /* font-family: "gowun"; */
     height: 100vh;
     background-color: rgb(147, 167, 194, 0.3);
 `;
@@ -101,11 +101,45 @@ const DatePickerForm = styled.form`
     display:inline-block;
 `;
 
+const DateSelector = styled.button`
+    border-radius: 4px;
+    background-color: rgb(255, 255, 255);
+    box-shadow: 0 1px 2px 0 rgb(35 57 66 / 21%);
+    border: 1px solid transparent;
+    text-align: center;
+    width: 12%;
+    height: 4vh;
+    &:hover {
+        opacity: 0.6;
+        cursor: pointer;
+    }
+`;
+
+const DatePickerButton = styled.div`
+    text-align: center;
+    padding: 2%;
+    background-color: rgb(229, 232, 237);
+    &:hover {
+        opacity: 0.6;
+        cursor: pointer;
+    }
+`;
+
+const DeleteBtn = styled.div`
+    float:right;
+    margin-right: 15px;
+    &:hover {
+        opacity: 0.4;
+        cursor: pointer;
+    }
+`;
+
 const DeliveryReadyView = () => {
 
-    const [unReleasedData, setUnReleasedData] = useState(null);
+    const [unreleasedData, setUnreleasedData] = useState(null);
     const [releasedData, setReleasedData] = useState(null);
-    const [checkedOrderList, setCheckedOrderList] = useState([]);
+    const [unreleaseCheckedOrderList, setUnreleaseCheckedOrderList] = useState([]);
+    const [releaseCheckedOrderList, setReleaseCheckedOrderList] = useState([]);
     const [downloadOrderList, setDownloadOrderList] = useState([]);
     const [currentDate, setCurrentDate] = useState(null);
     const [downloadLoading, setDownloadLoading] = useState(false);
@@ -118,16 +152,12 @@ const DeliveryReadyView = () => {
             key: 'selection'
         }
     );
-    // const selectionRange ={
-    //         startDate: new Date(),
-    //         endDate: new Date(),
-    //         key: 'selection',
-    //     };
+    const [deliveryReadyDateRangePickerModalOpen, setDeliveryReadyDateRangePickerModalOpen] = useState(false);
+    const [selectedDateText, setSelectedDateText] = useState("날짜 선택");
 
     useEffect(() => {
         async function fetchInit() {
             await __handleDataConnect().getDeliveryReadyUnreleasedData();
-            // await __handleDataConnect().getDeliveryReadyReleasedData();
         }
         fetchInit();
     }, []);
@@ -138,7 +168,7 @@ const DeliveryReadyView = () => {
                 await axios.get("/api/v1/delivery-ready/view/unreleased")
                     .then(res => {
                         if (res.status === 200 && res.data && res.data.message === 'success') {
-                            setUnReleasedData(res.data.data);
+                            setUnreleasedData(res.data.data);
                         }
                     })
                     .catch(err => {
@@ -146,20 +176,41 @@ const DeliveryReadyView = () => {
                         alert('undefined error. : getDeliveryReadyUnreleasedData');
                     })
             },
-            // getDeliveryReadyReleasedData: async function () {
-            //     const currentDate = document.getElementById("current-date").value;
-            //     await axios.get(`/api/v1/delivery-ready/view/released/${currentDate}`)
-            //         .then(res => {
-            //             if (res.status == 200 && res.data && res.data.message == 'success') {
-            //                 setReleasedData(res.data.data);
-            //                 setDownloadOrderList(res.data.data);
-            //             }
-            //         })
-            //         .catch(err => {
-            //             console.log(err);
-            //             alert('undefined error. : getDeliveryReadyReleasedData');
-            //         })
-            // },
+            getDeliveryReadyReleasedData: async function (start, end) {
+
+                var date1 = new Date(start);
+                date1.setDate(date1.getDate() + 1);
+                date1.setHours(-15, 0, 0, 0);     // start date 00:00:00 설정
+
+                var date2 = new Date(end);
+                date2.setDate(date2.getDate() + 1)
+                date2.setHours(8, 59, 59, 59);     // end date 23:59:59 설정
+
+                var originEndDate = new Date(end);
+                originEndDate.setDate(originEndDate.getDate() + 1);
+
+                date1 = JSON.stringify(date1);
+                date2 = JSON.stringify(date2);
+                originEndDate = JSON.stringify(originEndDate);
+
+                date1 = date1.substring(1, 11) + " " + date1.substring(12, 20);
+                date2 = date2.substring(1, 11) + " " + date2.substring(12, 20);
+
+                await axios.get(`/api/v1/delivery-ready/view/release/${date1}&&${date2}`)
+                    .then(res => {
+                        console.log(res);
+                        if (res.status == 200 && res.data && res.data.message == 'success') {
+                            setReleasedData(res.data.data);
+                        }
+                        setSelectedDateText(date1.substring(1, 11) + " ~ " + originEndDate.substring(1, 11));
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        alert('undefined error. : getDeliveryReadyReleased');
+                    })
+
+                    setDeliveryReadyDateRangePickerModalOpen(false);
+                },
             downloadOrderForm: async function (data) {
                 await axios.post(`/api/v1/delivery-ready/view/download`, data, {
                     responseType: 'blob'
@@ -173,9 +224,7 @@ const DeliveryReadyView = () => {
                         document.body.appendChild(link);
                         link.click();
 
-                        // __handleDataConnect().getDeliveryReadyReleasedData();
                         __handleDataConnect().getDeliveryReadyUnreleasedData();
-                        __handleDataConnect().getDeliveryReadyRelease();
                         setDownloadLoading(false);
                     })
                     .catch(err => {
@@ -183,52 +232,17 @@ const DeliveryReadyView = () => {
                         setDownloadLoading(false);
                     });
             },
-            getDeliveryReadyRelease: async function (start, end) {
-
-                var date1 = new Date(start);
-                date1.setDate(date1.getDate()+1);
-                date1.setHours(0, 0, 0, 0);
-
-                var date2 = new Date(end);
-                date2.setDate(date2.getDate()+1)
-                date2.setHours(23, 59, 59, 59);
-                // date2.setHours(23, 59, 59, 59);
-                
-                // console.log(date1 + " " + date2);
-
-                date1 = JSON.stringify(date1);
-                date2 = JSON.stringify(date2);
-
-                // console.log(date1 + " " + date2);
-                
-                date1 = date1.substring(1, 11) + " " + date1.substring(12, 20);
-                date2 = date2.substring(1, 11) + " " + date2.substring(12, 20);
-                
-                await axios.get(`/api/v1/delivery-ready/view/release/${date1}&&${date2}`)
+            deleteOrderData: async function (itemId) {
+                await axios.get(`/api/v1/delivery-ready/view/deleteOne/${itemId}`)
                     .then(res => {
-                        console.log(res);
-                        if (res.status == 200 && res.data && res.data.message == 'success') {
-                            setReleasedData(res.data.data);
-                            setDownloadOrderList(res.data.data);
+                        if (res.status === 200 && res.data && res.data.message === 'success') {
+                            __handleDataConnect().getDeliveryReadyUnreleasedData();
                         }
                     })
                     .catch(err => {
                         console.log(err);
-                        alert('undefined error. : getDeliveryReadyReleased');
+                        alert('undefined error. : deleteOrderData');
                     })
-
-                // await axios.get(`/api/v1/delivery-ready/view/release/${date1}&&${date2}`)
-                //     .then(res => {
-                //         console.log(res);
-                //         if (res.status == 200 && res.data && res.data.message == 'success') {
-                //             setReleasedData(res.data.data);
-                //             setDownloadOrderList(res.data.data);
-                //         }
-                //     })
-                //     .catch(err => {
-                //         console.log(err);
-                //         alert('undefined error. : getDeliveryReadyReleased');
-                //     })
             }
         }
     }
@@ -239,58 +253,73 @@ const DeliveryReadyView = () => {
                 return {
                     submit: async function (e) {
                         e.preventDefault();
-                        let data = await __handleEventControl().checkedOrderList().getCheckedData();
+                        let unreleaseData = await __handleEventControl().unreleaseCheckedOrderList().getCheckedData();
+                        let releaseData = await __handleEventControl().releaseCheckedOrderList().getCheckedData();
 
-                        if(data.length || downloadOrderList.length){
+                        let downloadData = downloadOrderList.concat(unreleaseData);
+                        downloadData = downloadData.concat(releaseData);
+
+                        if(downloadOrderList.length || downloadData.length){
                             setDownloadLoading(true);
-                            await __handleDataConnect().downloadOrderForm(downloadOrderList.concat(data));
+                            await __handleDataConnect().downloadOrderForm(downloadOrderList.concat(downloadData));
                         }
                         else{
                             alert("no checked order data");
                         }
+                    },
+                    delete: async function (e) {
+                        e.preventDefault();
+
+                        if(unreleaseCheckedOrderList.length == 1){
+                            await __handleDataConnect().deleteOrderData(unreleaseCheckedOrderList);
+                            setUnreleaseCheckedOrderList([]);
+                        }
+                        else{
+                            alert("only on can be deleted")
+                        }
                     }
                 }
             },
-            checkedOrderList: function () {
+            unreleaseCheckedOrderList: function () {
                 return {
                     checkAll: function () {
                         if (this.isCheckedAll()) {
-                            setCheckedOrderList([]);
+                            setUnreleaseCheckedOrderList([]);
                         } else {
-                            let checkedList = unReleasedData.map(r => r.deliveryReadyItem.id);
-                            setCheckedOrderList(checkedList);
+                            let unreleaseCheckedList = unreleasedData.map(r => r.deliveryReadyItem.id);
+                            setUnreleaseCheckedOrderList(unreleaseCheckedList);
                         }
                     },
                     isCheckedAll: function () {
-                        if(unReleasedData){
-                            let orderIdList = unReleasedData.map(r => r.deliveryReadyItem.id).sort();
-                            checkedOrderList.sort();
-                            return JSON.stringify(orderIdList) === JSON.stringify(checkedOrderList);
+                        if(unreleasedData){
+                            let unreleaseOrderIdList = unreleasedData.map(r => r.deliveryReadyItem.id).sort();
+                            unreleaseCheckedOrderList.sort();
+                            return JSON.stringify(unreleaseOrderIdList) === JSON.stringify(unreleaseCheckedOrderList);
                         }
                     },
-                    isChecked: function (orderId) {
-                        return checkedOrderList.includes(orderId);
+                    isChecked: function (unreleaseOrderId) {
+                        return unreleaseCheckedOrderList.includes(unreleaseOrderId);
                     },
-                    checkOne: function (e, orderId) {
+                    checkOne: function (e, unreleaseOrderId) {
                         if (e.target.checked) {
-                            setCheckedOrderList(checkedOrderList.concat(orderId));
+                            setUnreleaseCheckedOrderList(unreleaseCheckedOrderList.concat(unreleaseOrderId));
                         } else {
-                            setCheckedOrderList(checkedOrderList.filter(r => r !== orderId));
+                            setUnreleaseCheckedOrderList(unreleaseCheckedOrderList.filter(r => r !== unreleaseOrderId));
                         }
                     },
-                    checkOneLi: function(orderId){
-                        if(checkedOrderList.includes(orderId)){
-                            setCheckedOrderList(checkedOrderList.filter(r => r !== orderId));
+                    checkOneLi: function(unreleaseOrderId){
+                        if(unreleaseCheckedOrderList.includes(unreleaseOrderId)){
+                            setUnreleaseCheckedOrderList(unreleaseCheckedOrderList.filter(r => r !== unreleaseOrderId));
                         }else{
-                            setCheckedOrderList(checkedOrderList.concat(orderId));
+                            setUnreleaseCheckedOrderList(unreleaseCheckedOrderList.concat(unreleaseOrderId));
                         }
                     },
                     getCheckedData: async function () {
                         let dataList = [];
 
-                        if(unReleasedData){
-                            unReleasedData.forEach( order => {
-                                if (checkedOrderList.includes(order.deliveryReadyItem.id)) {
+                        if(unreleasedData){
+                            unreleasedData.forEach( order => {
+                                if (unreleaseCheckedOrderList.includes(order.deliveryReadyItem.id)) {
                                     dataList.push(order);
                                 }
                             })
@@ -299,12 +328,51 @@ const DeliveryReadyView = () => {
                     }
                 }
             },
-            changeDatePicker: function () {
+            releaseCheckedOrderList: function () {
                 return {
-                    changeReleasedData : async function (e) {
-                        setCurrentDate(e.target.value);
+                    checkAll: function () {
+                        if (this.isCheckedAll()) {
+                            setReleaseCheckedOrderList([]);
+                        } else {
+                            let releaseCheckedList = releasedData.map(r => r.deliveryReadyItem.id);
+                            setReleaseCheckedOrderList(releaseCheckedList);
+                        }
+                    },
+                    isCheckedAll: function () {
+                        if(releasedData){
+                            let releaseOrderIdList = releasedData.map(r => r.deliveryReadyItem.id).sort();
+                            releaseCheckedOrderList.sort();
+                            return JSON.stringify(releaseOrderIdList) === JSON.stringify(releaseCheckedOrderList);
+                        }
+                    },
+                    isChecked: function (releaseOrderId) {
+                        return releaseCheckedOrderList.includes(releaseOrderId);
+                    },
+                    checkOne: function (e, releaseOrderId) {
+                        if (e.target.checked) {
+                            setReleaseCheckedOrderList(releaseCheckedOrderList.concat(releaseOrderId));
+                        } else {
+                            setReleaseCheckedOrderList(releaseCheckedOrderList.filter(r => r !== releaseOrderId));
+                        }
+                    },
+                    checkOneLi: function(releaseOrderId){
+                        if(releaseCheckedOrderList.includes(releaseOrderId)){
+                            setReleaseCheckedOrderList(releaseCheckedOrderList.filter(r => r !== releaseOrderId));
+                        }else{
+                            setReleaseCheckedOrderList(releaseCheckedOrderList.concat(releaseOrderId));
+                        }
+                    },
+                    getCheckedData: async function () {
+                        let dataList = [];
 
-                        await __handleDataConnect().getDeliveryReadyReleasedData();
+                        if(releasedData){
+                            releasedData.forEach( order => {
+                                if (releaseCheckedOrderList.includes(order.deliveryReadyItem.id)) {
+                                    dataList.push(order);
+                                }
+                            })
+                        }
+                        return dataList;
                     }
                 }
             },
@@ -312,16 +380,7 @@ const DeliveryReadyView = () => {
                 return {
                     changeReleasedData : async function (date) {
                         setSelectionRange(date.selection);
-
-                        // await __handleDataConnect().getDeliveryReadyReleasedData(date.selection.startDate, date.selection.endDate);
                     }
-                    // changeReleasedData : async function (date) {
-                    //     setDateRange(date);
-
-                    //     console.log(date);
-                        
-                    //     await __handleDataConnect().getDeliveryReadyReleasedData(date);
-                    // }
                 }
             }
 
@@ -340,14 +399,16 @@ const DeliveryReadyView = () => {
                 <DataContainer>
                     <BoardContainer>
                         <BoardTitle>미출고 데이터</BoardTitle>
+                        <DeleteBtn onClick={(e) => __handleEventControl().downloadOrderFormData().delete(e)}>
+                            <DeleteForeverTwoToneIcon />
+                        </DeleteBtn>
                         <DataListTitle className="row">
                             <ColElement className="col">
                                 <Checkbox
                                     color="primary"
                                     inputProps={{ 'aria-label': '전체 출고 등록' }}
-                                    onChange={() => __handleEventControl().checkedOrderList().checkAll()} checked={__handleEventControl().checkedOrderList().isCheckedAll()}
+                                    onChange={() => __handleEventControl().unreleaseCheckedOrderList().checkAll()} checked={__handleEventControl().unreleaseCheckedOrderList().isCheckedAll()}
                                 />
-                                {/* <input type='checkbox' onChange={() => __handleEventControl().checkedOrderList().checkAll()} checked={__handleEventControl().checkedOrderList().isCheckedAll()}></input> */}
                             </ColElement>
                             <ColElement className="col">
                                 <span>주문번호</span>
@@ -395,31 +456,31 @@ const DeliveryReadyView = () => {
                                 <span>수량(A타입)</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션_defalut_name</span>
+                                <span>옵션명1</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션_name</span>
+                                <span>옵션명2</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션_unit</span>
+                                <span>옵션 수량</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>상품_name</span>
+                                <span>상품명</span>
                             </ColElement>
                         </DataListTitle>
-                        {unReleasedData && unReleasedData.map((data, dataIdx) => {
+                        {unreleasedData && unreleasedData.map((data, unreleasedDataIdx) => {
                             return (
                                 <DataList
-                                    key={dataIdx}
+                                    key={unreleasedDataIdx}
                                     className="row"
-                                    onClick={() => __handleEventControl().checkedOrderList().checkOneLi(data.deliveryReadyItem.id)}
-                                    checked={__handleEventControl().checkedOrderList().isChecked(data.deliveryReadyItem.id)}
+                                    onClick={() => __handleEventControl().unreleaseCheckedOrderList().checkOneLi(data.deliveryReadyItem.id)}
+                                    checked={__handleEventControl().unreleaseCheckedOrderList().isChecked(data.deliveryReadyItem.id)}
                                 >
                                     <DataText className="col">
                                         <Checkbox
                                             color="default"
                                             inputProps={{ 'aria-label': '출고 등록' }}
-                                            checked={__handleEventControl().checkedOrderList().isChecked(data.deliveryReadyItem.id)}
+                                            checked={__handleEventControl().unreleaseCheckedOrderList().isChecked(data.deliveryReadyItem.id)}
                                         />
                                     </DataText>
                                     <DataText className="col">
@@ -484,30 +545,28 @@ const DeliveryReadyView = () => {
                         })}
                     </BoardContainer>
                     <BoardContainer>
-                        <DateRange
-                                editableDateInputs={true}
+                        <Dialog open={deliveryReadyDateRangePickerModalOpen} onClose={() => setDeliveryReadyDateRangePickerModalOpen(false)}>            
+                           <DateRange
+                                editableDateInputs={false}
                                 onChange={(date) => __handleEventControl().changeDateRangePicker().changeReleasedData(date)}
                                 moveRangeOnFirstSelection={false}
                                 local="ko"
                                 ranges={[selectionRange]}
                             />
-                        <button onClick={() => __handleDataConnect().getDeliveryReadyRelease(selectionRange.startDate, selectionRange.endDate)}>확인</button>
+                            <DatePickerButton onClick={() => __handleDataConnect().getDeliveryReadyReleasedData(selectionRange.startDate, selectionRange.endDate)}>확인</DatePickerButton>
+                        </Dialog>
                         <div>
                             <BoardTitle>출고 데이터</BoardTitle>
-                            {/* <DatePicker
-                                id="date-range" 
-                                selectsRange={true}
-                                startDate={startDate}
-                                endDate={endDate}
-                                onChange={(update) => {
-                                    __handleEventControl().changeDateRangePicker().changeReleasedData(update)
-                                }}
-                                withPortal /> */}
-                            {/* <input id="current-date" type="date" defaultValue={moment().format("YYYY-MM-DD")} onChange={(e) => __handleEventControl().changeDatePicker().changeReleasedData(e) } value={currentDate}></input> */}
+                            <DateSelector id="select-date-text" onClick={() => setDeliveryReadyDateRangePickerModalOpen(true)}>{selectedDateText}</DateSelector>
                         </div>
                         <DataListTitle className="row">
                             <ColElement className="col">
-                                <span>항목</span>
+                                <Checkbox
+                                    color="primary"
+                                    inputProps={{ 'aria-label': '전체 출고 등록' }}
+                                    onChange={() => __handleEventControl().releaseCheckedOrderList().checkAll()} checked={__handleEventControl().releaseCheckedOrderList().isCheckedAll()}
+                                />
+                                {/* <Checkbox disabled checked inputProps={{ 'aria-label': '출고 등록' }} /> */}
                             </ColElement>
                             <ColElement className="col">
                                 <span>주문번호</span>
@@ -555,26 +614,33 @@ const DeliveryReadyView = () => {
                                 <span>수량(A타입)</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션_defalut_name</span>
+                                <span>옵션명1</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션_name</span>
+                                <span>옵션명2</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션_unit</span>
+                                <span>옵션 수량</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>상품_name</span>
+                                <span>상품명</span>
                             </ColElement>
                         </DataListTitle>
-                        {releasedData && releasedData.map((data) => {
+                        {releasedData && releasedData.map((data, releasedDataIdx) => {
                             return (
                                 <DataList
-                                    key={data.id}
+                                    key={releasedDataIdx}
                                     className="row"
+                                    onClick={() => __handleEventControl().releaseCheckedOrderList().checkOneLi(data.deliveryReadyItem.id)}
+                                    checked={__handleEventControl().releaseCheckedOrderList().isChecked(data.deliveryReadyItem.id)}
                                 >
                                     <DataText className="col">
-                                        <Checkbox disabled checked inputProps={{ 'aria-label': '출고 등록' }} />
+                                        <Checkbox
+                                            color="default"
+                                            inputProps={{ 'aria-label': '출고 등록' }}
+                                            checked={__handleEventControl().releaseCheckedOrderList().isChecked(data.deliveryReadyItem.id)}
+                                        />
+                                        {/* <Checkbox disabled checked inputProps={{ 'aria-label': '출고 등록' }} /> */}
                                     </DataText>
                                     <DataText className="col">
                                         <span>{data.deliveryReadyItem.orderNumber}</span>

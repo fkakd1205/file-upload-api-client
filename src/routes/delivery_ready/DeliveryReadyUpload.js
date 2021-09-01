@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import styled from 'styled-components';
 
 const Container = styled.div`
-    font-family: "gowun";
+    /* font-family: "gowun"; */
 `;
 
 const Header = styled.div`
