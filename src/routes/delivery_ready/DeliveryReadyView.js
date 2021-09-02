@@ -50,7 +50,7 @@ const DownloadButton = styled.label`
 const DataContainer = styled.div`
     margin: 10px 20px;
     height:90%;
-    overflow: scroll;
+    overflow: hidden;
 `;
 
 const BoardContainer = styled.div`
@@ -58,7 +58,7 @@ const BoardContainer = styled.div`
     margin-bottom: 10px;
     padding: 10px;
     background-color: #f3f3f3;
-    overflow: scroll;
+    overflow: auto;
 `;
 
 const BoardTitle = styled.div`
@@ -72,7 +72,15 @@ const DataListTitle = styled.li`
     font-size: 10px;
     text-align: center;
     display: flex;
+    width: 100%;
     margin-bottom: 8px;
+
+    overflow: auto;
+    width: 2000px;
+
+    & .delete-col {
+        width: 10%;
+    }
 `;
 
 const DataList = styled.li`
@@ -83,18 +91,33 @@ const DataList = styled.li`
     margin-left:0;
     padding-left:0;
     height: 40px;
+
+    overflow: auto;
+    width: 2000px;
+
+    & .delete-btn {
+        background-color: rgba(217, 50, 50, 0.3);
+    }
+
+    & .large-cell {
+        width: 100%;
+    }
+
+    & .midium-cell {
+        width: 60%;
+    }
 `;
 
 const DataText = styled.div`
     font-size: 10px;
-    width: 30%;
+    width: 20%;
     background: white;
-    overflow: scroll;
+    overflow: auto;
     border-right: 1px solid #f5f5f5;
 `;
 
 const ColElement = styled.div`
-    width: 30%;
+    width: 20%;
 `;
 
 const DatePickerForm = styled.form`
@@ -102,12 +125,13 @@ const DatePickerForm = styled.form`
 `;
 
 const DateSelector = styled.button`
+    float: right;
     border-radius: 4px;
     background-color: rgb(255, 255, 255);
     box-shadow: 0 1px 2px 0 rgb(35 57 66 / 21%);
     border: 1px solid transparent;
     text-align: center;
-    width: 12%;
+    width: 15%;
     height: 4vh;
     &:hover {
         opacity: 0.6;
@@ -134,6 +158,19 @@ const DeleteBtn = styled.div`
     }
 `;
 
+const CheckDataText = styled.span`
+    font-size: 13px;
+    margin: 0 15px;
+`;
+
+const CancleBtn = styled.button`
+    width: 10%;
+    font-size: 12px;
+    background-color: #b0bec5;
+    border-radius: 5px;
+    border: none;
+`;
+
 const DeliveryReadyView = () => {
 
     const [unreleasedData, setUnreleasedData] = useState(null);
@@ -141,10 +178,7 @@ const DeliveryReadyView = () => {
     const [unreleaseCheckedOrderList, setUnreleaseCheckedOrderList] = useState([]);
     const [releaseCheckedOrderList, setReleaseCheckedOrderList] = useState([]);
     const [downloadOrderList, setDownloadOrderList] = useState([]);
-    const [currentDate, setCurrentDate] = useState(null);
     const [downloadLoading, setDownloadLoading] = useState(false);
-    const [dateRange, setDateRange] = useState([null, null]);
-    const [startDate, endDate] = dateRange;
     const [selectionRange, setSelectionRange] = useState(
         {
             startDate: new Date(),
@@ -157,7 +191,7 @@ const DeliveryReadyView = () => {
 
     useEffect(() => {
         async function fetchInit() {
-            await __handleDataConnect().getDeliveryReadyUnreleasedData();
+            await __handleDataConnect().getDeliveryReadyUnreleasedData(); 
         }
         fetchInit();
     }, []);
@@ -196,9 +230,10 @@ const DeliveryReadyView = () => {
                 date1 = date1.substring(1, 11) + " " + date1.substring(12, 20);
                 date2 = date2.substring(1, 11) + " " + date2.substring(12, 20);
 
+                setReleaseCheckedOrderList([]);
+
                 await axios.get(`/api/v1/delivery-ready/view/release/${date1}&&${date2}`)
                     .then(res => {
-                        console.log(res);
                         if (res.status == 200 && res.data && res.data.message == 'success') {
                             setReleasedData(res.data.data);
                         }
@@ -209,8 +244,8 @@ const DeliveryReadyView = () => {
                         alert('undefined error. : getDeliveryReadyReleased');
                     })
 
-                    setDeliveryReadyDateRangePickerModalOpen(false);
-                },
+                setDeliveryReadyDateRangePickerModalOpen(false);
+            },
             downloadOrderForm: async function (data) {
                 await axios.post(`/api/v1/delivery-ready/view/download`, data, {
                     responseType: 'blob'
@@ -243,6 +278,19 @@ const DeliveryReadyView = () => {
                         console.log(err);
                         alert('undefined error. : deleteOrderData');
                     })
+            },
+            changeToUnreleaseData: async function (itemId) {
+                await axios.get(`/api/v1/delivery-ready/view/updateOne/${itemId}`)
+                    .then(res => {
+                        if (res.status === 200 && res.data && res.data.message === 'success') {
+                            __handleDataConnect().getDeliveryReadyUnreleasedData();
+                            __handleDataConnect().getDeliveryReadyReleasedData(selectionRange.startDate, selectionRange.endDate);
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        alert('undefined error. : changeToUnreleasedData');
+                    })
             }
         }
     }
@@ -267,16 +315,11 @@ const DeliveryReadyView = () => {
                             alert("no checked order data");
                         }
                     },
-                    delete: async function (e) {
-                        e.preventDefault();
+                    delete: async function (e, itemId) {
+                        e.stopPropagation();
 
-                        if(unreleaseCheckedOrderList.length == 1){
-                            await __handleDataConnect().deleteOrderData(unreleaseCheckedOrderList);
-                            setUnreleaseCheckedOrderList([]);
-                        }
-                        else{
-                            alert("only on can be deleted")
-                        }
+                        await __handleDataConnect().deleteOrderData(itemId);
+                        setUnreleaseCheckedOrderList([]);
                     }
                 }
             },
@@ -291,11 +334,12 @@ const DeliveryReadyView = () => {
                         }
                     },
                     isCheckedAll: function () {
-                        if(unreleasedData){
+                        if(unreleasedData && unreleasedData.length){
                             let unreleaseOrderIdList = unreleasedData.map(r => r.deliveryReadyItem.id).sort();
                             unreleaseCheckedOrderList.sort();
+
                             return JSON.stringify(unreleaseOrderIdList) === JSON.stringify(unreleaseCheckedOrderList);
-                        }
+                        }else return false;
                     },
                     isChecked: function (unreleaseOrderId) {
                         return unreleaseCheckedOrderList.includes(unreleaseOrderId);
@@ -333,17 +377,18 @@ const DeliveryReadyView = () => {
                     checkAll: function () {
                         if (this.isCheckedAll()) {
                             setReleaseCheckedOrderList([]);
-                        } else {
+                        } else if(releasedData) {
                             let releaseCheckedList = releasedData.map(r => r.deliveryReadyItem.id);
                             setReleaseCheckedOrderList(releaseCheckedList);
                         }
                     },
                     isCheckedAll: function () {
-                        if(releasedData){
+                        if(releasedData && releasedData.length){
                             let releaseOrderIdList = releasedData.map(r => r.deliveryReadyItem.id).sort();
                             releaseCheckedOrderList.sort();
+
                             return JSON.stringify(releaseOrderIdList) === JSON.stringify(releaseCheckedOrderList);
-                        }
+                        }else return false;
                     },
                     isChecked: function (releaseOrderId) {
                         return releaseCheckedOrderList.includes(releaseOrderId);
@@ -382,6 +427,15 @@ const DeliveryReadyView = () => {
                         setSelectionRange(date.selection);
                     }
                 }
+            },
+            changeDeliveryReadyItem: function () {
+                return {
+                    changeToUnreleaseData: async function (e, itemId) {
+                        e.stopPropagation();
+
+                        await __handleDataConnect().changeToUnreleaseData(itemId);
+                    }
+                }
             }
 
         }
@@ -399,9 +453,7 @@ const DeliveryReadyView = () => {
                 <DataContainer>
                     <BoardContainer>
                         <BoardTitle>미출고 데이터</BoardTitle>
-                        <DeleteBtn onClick={(e) => __handleEventControl().downloadOrderFormData().delete(e)}>
-                            <DeleteForeverTwoToneIcon />
-                        </DeleteBtn>
+                        <CheckDataText>[✔️ : {unreleaseCheckedOrderList.length}개]</CheckDataText>
                         <DataListTitle className="row">
                             <ColElement className="col">
                                 <Checkbox
@@ -425,22 +477,16 @@ const DeliveryReadyView = () => {
                             <ColElement className="col">
                                 <span>우편번호</span>
                             </ColElement>
-                            <ColElement className="col">
+                            <ColElement className="col large-cell">
                                 <span>주소</span>
                             </ColElement>
-                            <ColElement className="col">
+                            {/* <ColElement className="col">
                                 <span>운송장번호</span>
-                            </ColElement>
-                            <ColElement className="col">
+                            </ColElement> */}
+                            <ColElement className="col large-cell">
                                 <span>상품명1</span>
                             </ColElement>
-                            <ColElement className="col">
-                                <span>보내는사람(지정)</span>
-                            </ColElement>
-                            <ColElement className="col">
-                                <span>전화번호1(지정)</span>
-                            </ColElement>
-                            <ColElement className="col">
+                            <ColElement className="col midium-cell">
                                 <span>상품상세1</span>
                             </ColElement>
                             <ColElement className="col">
@@ -456,16 +502,25 @@ const DeliveryReadyView = () => {
                                 <span>수량(A타입)</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션명1</span>
+                                <span>*상품명</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션명2</span>
+                                <span>*옵션명1</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션 수량</span>
+                                <span>*옵션명2</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>상품명</span>
+                                <span>*옵션 수량</span>
+                            </ColElement>
+                            <ColElement className="col">
+                                <span>보내는사람(지정)</span>
+                            </ColElement>
+                            <ColElement className="col">
+                                <span>전화번호1(지정)</span>
+                            </ColElement>
+                            <ColElement className="col delete-col">
+                                <span></span>
                             </ColElement>
                         </DataListTitle>
                         {unreleasedData && unreleasedData.map((data, unreleasedDataIdx) => {
@@ -498,22 +553,16 @@ const DeliveryReadyView = () => {
                                     <DataText className="col">
                                         <span>{data.deliveryReadyItem.zipCode}</span>
                                     </DataText>
-                                    <DataText className="col">
+                                    <DataText className="col large-cell">
                                         <span>{data.deliveryReadyItem.destination}</span>
                                     </DataText>
-                                    <DataText className="col">
+                                    {/* <DataText className="col">
                                         <span></span>
-                                    </DataText>
-                                    <DataText className="col">
+                                    </DataText> */}
+                                    <DataText className="col large-cell">
                                         <span>{data.deliveryReadyItem.prodName}</span>
                                     </DataText>
-                                    <DataText className="col">
-                                        <span>스토어명</span>
-                                    </DataText>
-                                    <DataText className="col">
-                                        <span>070-0000-0000</span>
-                                    </DataText>
-                                    <DataText className="col">
+                                    <DataText className="col midium-cell">
                                         <span>{data.deliveryReadyItem.optionInfo}</span>
                                     </DataText>
                                     <DataText className="col">
@@ -529,6 +578,9 @@ const DeliveryReadyView = () => {
                                         <span>{data.deliveryReadyItem.unitA}</span>
                                     </DataText>
                                     <DataText className="col">
+                                        <span>{data.prodManagementName}</span>
+                                    </DataText>
+                                    <DataText className="col">
                                         <span>{data.optionDefaultName}</span>
                                     </DataText>
                                     <DataText className="col">
@@ -538,8 +590,14 @@ const DeliveryReadyView = () => {
                                         <span>{data.optionStockUnit}</span>
                                     </DataText>
                                     <DataText className="col">
-                                        <span>{data.prodManagementName}</span>
+                                        <span>스토어명</span>
                                     </DataText>
+                                    <DataText className="col">
+                                        <span>070-0000-0000</span>
+                                    </DataText>
+                                    <CancleBtn className="col delete-btn" onClick={(e) => __handleEventControl().downloadOrderFormData().delete(e, data.deliveryReadyItem.id)}>
+                                        <DeleteForeverTwoToneIcon />
+                                    </CancleBtn>
                                 </DataList>
                             )
                         })}
@@ -557,6 +615,7 @@ const DeliveryReadyView = () => {
                         </Dialog>
                         <div>
                             <BoardTitle>출고 데이터</BoardTitle>
+                            <CheckDataText>[✔️ : {releaseCheckedOrderList.length}개]</CheckDataText>
                             <DateSelector id="select-date-text" onClick={() => setDeliveryReadyDateRangePickerModalOpen(true)}>{selectedDateText}</DateSelector>
                         </div>
                         <DataListTitle className="row">
@@ -583,22 +642,16 @@ const DeliveryReadyView = () => {
                             <ColElement className="col">
                                 <span>우편번호</span>
                             </ColElement>
-                            <ColElement className="col">
+                            <ColElement className="col large-cell">
                                 <span>주소</span>
                             </ColElement>
-                            <ColElement className="col">
+                            {/* <ColElement className="col">
                                 <span>운송장번호</span>
-                            </ColElement>
-                            <ColElement className="col">
+                            </ColElement> */}
+                            <ColElement className="col large-cell">
                                 <span>상품명1</span>
                             </ColElement>
-                            <ColElement className="col">
-                                <span>보내는사람(지정)</span>
-                            </ColElement>
-                            <ColElement className="col">
-                                <span>전화번호1(지정)</span>
-                            </ColElement>
-                            <ColElement className="col">
+                            <ColElement className="col midium-cell">
                                 <span>상품상세1</span>
                             </ColElement>
                             <ColElement className="col">
@@ -614,16 +667,25 @@ const DeliveryReadyView = () => {
                                 <span>수량(A타입)</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션명1</span>
+                                <span>*상품명</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션명2</span>
+                                <span>*옵션명1</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>옵션 수량</span>
+                                <span>*옵션명2</span>
                             </ColElement>
                             <ColElement className="col">
-                                <span>상품명</span>
+                                <span>*옵션 수량</span>
+                            </ColElement>
+                            <ColElement className="col">
+                                <span>보내는사람(지정)</span>
+                            </ColElement>
+                            <ColElement className="col">
+                                <span>전화번호1(지정)</span>
+                            </ColElement>
+                            <ColElement className="col delete-col">
+                                <span></span>
                             </ColElement>
                         </DataListTitle>
                         {releasedData && releasedData.map((data, releasedDataIdx) => {
@@ -657,22 +719,16 @@ const DeliveryReadyView = () => {
                                     <DataText className="col">
                                         <span>{data.deliveryReadyItem.zipCode}</span>
                                     </DataText>
-                                    <DataText className="col">
+                                    <DataText className="col large-cell">
                                         <span>{data.deliveryReadyItem.destination}</span>
                                     </DataText>
-                                    <DataText className="col">
+                                    {/* <DataText className="col">
                                         <span>{data.deliveryReadyItem.tranportNumber}</span>
-                                    </DataText>
-                                    <DataText className="col">
+                                    </DataText> */}
+                                    <DataText className="col large-cell">
                                         <span>{data.deliveryReadyItem.prodName}</span>
                                     </DataText>
-                                    <DataText className="col">
-                                        <span>스토어명</span>
-                                    </DataText>
-                                    <DataText className="col">
-                                        <span>070-0000-0000</span>
-                                    </DataText>
-                                    <DataText className="col">
+                                    <DataText className="col midium-cell">
                                         <span>{data.deliveryReadyItem.optionInfo}</span>
                                     </DataText>
                                     <DataText className="col">
@@ -688,6 +744,9 @@ const DeliveryReadyView = () => {
                                         <span>{data.deliveryReadyItem.unitA}</span>
                                     </DataText>
                                     <DataText className="col">
+                                        <span>{data.prodManagementName}</span>
+                                    </DataText>
+                                    <DataText className="col">
                                         <span>{data.optionDefaultName}</span>
                                     </DataText>
                                     <DataText className="col">
@@ -697,8 +756,14 @@ const DeliveryReadyView = () => {
                                         <span>{data.optionStockUnit}</span>
                                     </DataText>
                                     <DataText className="col">
-                                        <span>{data.prodManagementName}</span>
+                                        <span>스토어명</span>
                                     </DataText>
+                                    <DataText className="col">
+                                        <span>070-0000-0000</span>
+                                    </DataText>
+                                    <CancleBtn className="col" onClick={(e) => __handleEventControl().changeDeliveryReadyItem().changeToUnreleaseData(e, data.deliveryReadyItem.id)}>
+                                        취소
+                                    </CancleBtn>
                                 </DataList>
                             )
                         })}
