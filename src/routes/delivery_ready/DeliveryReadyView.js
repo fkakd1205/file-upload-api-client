@@ -6,6 +6,8 @@ import DownloadLoading from "../loading/DownloadLoading";
 import { DateRange } from "react-date-range";
 import Dialog from '@material-ui/core/Dialog';
 import DeleteForeverTwoToneIcon from '@material-ui/icons/DeleteForeverTwoTone';
+import IconButton from '@material-ui/core/IconButton';
+import CloseIcon from '@material-ui/icons/Close';
 
 import "react-datepicker/dist/react-datepicker.css";
 import "react-date-range/dist/styles.css";
@@ -185,6 +187,92 @@ const CancelBtn = styled.button`
     background-color: inherit;
 `;
 
+const GroupTitle = styled.div`
+    font-size: 1.3rem;
+    font-weight: 700;
+    padding:15px;
+    margin-bottom: 10px;
+
+    .closeButton {
+        float: right;
+        top: -5px;
+    }
+`;
+
+const OptionLi = styled.li`
+    margin-bottom: 6px;
+    display: flex;
+    border-radius: 10px;
+
+    .form-title {
+        background: rgb(147, 167, 194, 0.7);
+    }
+
+    .form-control {
+        &:hover {
+            cursor: pointer;
+        }
+    } 
+
+    // 체크 항목 하이라이트
+    ${(props) => props.checked ?
+        css`
+            background-color: #9bb6d150;
+        `
+        :
+        css`
+            &:hover{
+                background: #9bb6d130;
+            }
+        `
+    }
+`;
+
+const OptionInfoLi = styled.li`
+    display: flex;
+    border-radius: 10px;
+    margin-bottom: 5px;
+
+    .info-title {
+        background: rgb(255, 253, 226);
+        font-size: large;
+    }
+`;
+
+const OptionInfoTitle = styled.div`
+    padding: 2px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid rgb(241, 241, 241);
+`;
+
+const NameGroup = styled.div`
+    padding: 0 15px;
+`;
+
+const ModalText = styled.div`
+    overflow: hidden;
+    min-height: 30px;
+    height: auto;
+    font-size: 15px;
+    border: 1px solid #ced4da;
+    background: rgb(147, 167, 194, 0.2);
+    width: 25%;
+    padding: 2px;
+    text-align: center;
+`;
+
+const OptionContainer = styled.div`
+`;
+
+const ChangeBtn = styled.button`
+    margin: 10px;
+`;
+
+const OptionDataList = styled.div`
+    height: 50vh;
+    overflow: auto;
+`;
+
 const DeliveryReadyView = (props) => {
 
     const [unreleasedData, setUnreleasedData] = useState(null);
@@ -203,6 +291,13 @@ const DeliveryReadyView = (props) => {
     const [deliveryReadyDateRangePickerModalOpen, setDeliveryReadyDateRangePickerModalOpen] = useState(false);
     const [deliveryReadyOptionManagementModalOpen, setDeliveryReadyOptionManagementModalOpen] = useState(false);
     const [selectedDateText, setSelectedDateText] = useState("날짜 선택");
+    const [deliveryReadyOptionInfo, setDeliveryReadyOptionInfo] = useState(null);
+    const [originOptionInfo, setOriginOptionInfo] = useState(null);
+    const [originOptionManagementCode, setOriginOptionManagementCode] = useState(null);
+    const [changedOptionManagementCode, setChangedOptionManagementCode] = useState(null);
+    
+    const [fullWidth, setFullWidth] = useState(true);
+    const [maxWidth, setMaxWidth] = useState('sm');
 
     useEffect(() => {
         async function fetchInit() {
@@ -311,26 +406,27 @@ const DeliveryReadyView = (props) => {
                 await axios.get(`/api/v1/delivery-ready/view/searchList/productInfo`)
                     .then(res => {
                         if(res.status === 200 && res.data && res.data.message === 'success') {
-                            console.log(res.data);
+                            setDeliveryReadyOptionInfo(res.data.data);
                         }
                     })
                     .catch(err => {
                         console.log(err);
                         alert('undefined error. : getOptionManagementCode');
                     })
+            },
+            changeItemOptionManagementCode: async function (itemId, optionCode) {
+                await axios.get(`/api/v1/delivery-ready/view/updateOption/${itemId}&&${optionCode}`)
+                    .then(res => {
+                        if (res.status === 200 && res.data && res.data.message === 'success') {
+                            setDeliveryReadyOptionManagementModalOpen(false);
+                            __handleDataConnect().getDeliveryReadyUnreleasedData();
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        alert('undefined error. : changeItemOptionManagementCode');
+                    })
             }
-            // changeOptionManageCode: async function (itemId) {
-            //     await axios.get(`/api/v1/delivery-ready/view/updateOptionCode/${itemId}`)
-            //         .then(res => {
-            //             if(res.status === 200 && res.data && res.data.message === 'success') {
-            //                 console.log(res.data);
-            //             }
-            //         })
-            //         .catch(err => {
-            //             console.log(err);
-            //             alert('undefined error. : updateOptionManagementCode');
-            //         })
-            // }
         }
     }
 
@@ -474,14 +570,30 @@ const DeliveryReadyView = (props) => {
 
                         await __handleDataConnect().changeToUnreleaseData(itemId);
                     },
-                    changeOptionManagementCode: async function (e) {
+                    changeOptionManagementCode: async function (e, optionInfo) {
                         e.stopPropagation();
 
+                        setChangedOptionManagementCode(null);
                         setDeliveryReadyOptionManagementModalOpen(true);
+                        setOriginOptionInfo(optionInfo);
+                        setOriginOptionManagementCode(optionInfo.optionManagementCode);
 
-                        await __handleDataConnect().changeOptionManagementCode();
+                        await __handleDataConnect().getOptionManagementCode();
+                    },
+                    changeItemOption: async function () {
+                        await __handleDataConnect().changeItemOptionManagementCode(originOptionInfo.id, changedOptionManagementCode);
                     }
                 } 
+            },
+            optionInfoList: function () {
+                return {
+                    checkOneLi: function (optionCode) {
+                        setChangedOptionManagementCode(optionCode);
+                    },
+                    isChecked: function (optionCode) {
+                        return releaseCheckedOrderList.includes(optionCode);
+                    }
+                }
             }
         }
     }
@@ -491,13 +603,96 @@ const DeliveryReadyView = (props) => {
             <Dialog
                 open={deliveryReadyOptionManagementModalOpen}
                 onClose={() => setDeliveryReadyOptionManagementModalOpen(false)}
+                fullWidth={fullWidth}
+                maxWidth={maxWidth}
             >
+                <OptionContainer>
+                    <div style={{ borderBottom: '2px solid #f1f1f1' }}>
+                        <GroupTitle>옵션리스트
+                            <IconButton aria-label="close" className="closeButton" onClick={() => setDeliveryReadyOptionManagementModalOpen(false)}>
+                                <CloseIcon />
+                            </IconButton>
+                        </GroupTitle>
+                        <NameGroup>
+                            <OptionInfoTitle>
+                                <OptionInfoLi>
+                                    <ModalText className="info-title">
+                                        <span>현재</span>
+                                    </ModalText>
+                                    <ModalText className="info-title">
+                                        <span>{originOptionManagementCode}</span>
+                                    </ModalText>
+                                    <ModalText className="info-title">
+                                        <span>변경</span>
+                                    </ModalText>
+                                    <ModalText className="info-title">
+                                        <span>{changedOptionManagementCode}</span>
+                                    </ModalText>
+                                </OptionInfoLi>
+                                <div>
+                                    <ChangeBtn 
+                                    onClick={() => __handleEventControl().changeDeliveryReadyItem().changeItemOption()}
+                                    >
+                                        <span>확인</span>
+                                    </ChangeBtn>
+                                </div>
+                            </OptionInfoTitle>
+                            <OptionLi className="input-group">
+                                <ModalText className="form-title">
+                                    <span>옵션관리코드</span>
+                                </ModalText>
+                                <ModalText className="form-title">
+                                    <span>상품명</span>
+                                </ModalText>
+                                <ModalText className="form-title">
+                                    <span>옵션명1</span>
+                                </ModalText>
+                                <ModalText className="form-title">
+                                    <span>옵션명2</span>
+                                </ModalText>
+                            </OptionLi>
+                            <OptionDataList>
+                            {deliveryReadyOptionInfo?.map((data) => {
+                                return (
+                                    <OptionLi 
+                                        key={data.id}
+                                        className="input-group mb-3"
+                                        onClick={() => __handleEventControl().optionInfoList().checkOneLi(data.optionCode)}
+                                    >
+                                        <ModalText className="form-control">
+                                            <span>
+                                                {data.optionCode}
+                                            </span>
+                                        </ModalText>
+                                        <ModalText className="form-control">
+                                            <span>
+                                                {data.prodDefaultName}
+                                            </span>
+                                        </ModalText>
+                                        <ModalText className="form-control">
+                                            <span>
+                                                {data.optionDefaultName}
+                                            </span>
+                                        </ModalText>
+                                        <ModalText className="form-control">
+                                            <span>
+                                                {data.optionManagementName}
+                                            </span>
+                                        </ModalText>
+                                    </OptionLi>
+                                )
+                            })}
+                            </OptionDataList>
+                        </NameGroup>
+                    </div>
+                </OptionContainer>
             </Dialog>
+
             <DownloadLoading open={downloadLoading} />
             <Container>
                 <Header>
                     <Form>
-                        <DownloadButton onClick={(e) => __handleEventControl().downloadOrderFormData().submit(e)}>발주서 양식 다운로드</DownloadButton>
+                        <DownloadButton onClick={(e) => __handleEventControl().downloadOrderFormData().submit(e)}>발주서 다운</DownloadButton>
                     </Form>
                 </Header>
                 <DataContainer>
@@ -575,7 +770,7 @@ const DeliveryReadyView = (props) => {
                                 <span></span>
                             </CancelBtn>
                         </DataList>
-                        {unreleasedData && unreleasedData.map((data, unreleasedDataIdx) => {
+                        {unreleasedData?.map((data, unreleasedDataIdx) => {
                             return (
                                 <DataList
                                     key={unreleasedDataIdx}
@@ -617,7 +812,7 @@ const DeliveryReadyView = (props) => {
                                     <DataText className="col midium-cell">
                                         <span>{data.deliveryReadyItem.optionInfo}</span>
                                     </DataText>
-                                    <DataText className="col option-code-btn" onClick={(e) => __handleEventControl().changeDeliveryReadyItem().changeOptionManagementCode(e)}>
+                                    <DataText className="col option-code-btn" onClick={(e) => __handleEventControl().changeDeliveryReadyItem().changeOptionManagementCode(e, data.deliveryReadyItem)}>
                                         <span>{data.deliveryReadyItem.optionManagementCode}</span>
                                     </DataText>
                                     <DataText className="col">
