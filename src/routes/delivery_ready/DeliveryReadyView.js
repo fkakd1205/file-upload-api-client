@@ -60,6 +60,11 @@ const DataContainer = styled.div`
         top: -1px;
         z-index:10;
         background-color: #f3f3f3;
+
+        &:hover{
+            opacity: 1;
+            background-color: #f3f3f3;
+        }
     }
 `;
 
@@ -266,11 +271,32 @@ const OptionContainer = styled.div`
 
 const ChangeBtn = styled.button`
     margin: 10px;
+    float: right;
+    width: 100px;
+    vertical-align: middle;
+    font-size: 15px;
+    border-radius: 3px;
+    border: 1px solid #a7a7a7;
+    overflow: auto;
+    height: 4vh;
+    &:hover {
+        opacity: 0.6;
+        cursor: pointer;
+    }
+
+    @media only screen and (max-width:400px){
+        width: 80px;
+    }
 `;
 
 const OptionDataList = styled.div`
     height: 50vh;
     overflow: auto;
+`;
+
+const ChangeBox = styled.div`
+    width: 100%;
+    display: inline-block;
 `;
 
 const DeliveryReadyView = (props) => {
@@ -425,6 +451,19 @@ const DeliveryReadyView = (props) => {
                     .catch(err => {
                         console.log(err);
                         alert('undefined error. : changeItemOptionManagementCode');
+                    })
+            },
+            changeItemsOptionManagementCode: async function (itemId, optionCode) {
+                await axios.get(`/api/v1/delivery-ready/view/updateOptions/${itemId}&&${optionCode}`)
+                    .then(res => {
+                        if (res.status === 200 && res.data && res.data.message === 'success') {
+                            setDeliveryReadyOptionManagementModalOpen(false);
+                            __handleDataConnect().getDeliveryReadyUnreleasedData();
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        alert('undefined error. : changeItemsOptionManagementCode');
                     })
             }
         }
@@ -582,6 +621,9 @@ const DeliveryReadyView = (props) => {
                     },
                     changeItemOption: async function () {
                         await __handleDataConnect().changeItemOptionManagementCode(originOptionInfo.id, changedOptionManagementCode);
+                    },
+                    changeItemsOption: async function () {
+                        await __handleDataConnect().changeItemsOptionManagementCode(originOptionInfo.id, changedOptionManagementCode);
                     }
                 } 
             },
@@ -629,13 +671,14 @@ const DeliveryReadyView = (props) => {
                                         <span>{changedOptionManagementCode}</span>
                                     </ModalText>
                                 </OptionInfoLi>
-                                <div>
-                                    <ChangeBtn 
-                                    onClick={() => __handleEventControl().changeDeliveryReadyItem().changeItemOption()}
-                                    >
-                                        <span>확인</span>
+                                <ChangeBox>
+                                    <ChangeBtn onClick={() => __handleEventControl().changeDeliveryReadyItem().changeItemsOption()} className="update-all">
+                                        <span>일괄 변경</span>
                                     </ChangeBtn>
-                                </div>
+                                    <ChangeBtn onClick={() => __handleEventControl().changeDeliveryReadyItem().changeItemOption()}>
+                                        <span>변경</span>
+                                    </ChangeBtn>
+                                </ChangeBox>
                             </OptionInfoTitle>
                             <OptionLi className="input-group">
                                 <ModalText className="form-title">
@@ -983,7 +1026,7 @@ const DeliveryReadyView = (props) => {
                                     <DataText className="col midium-cell">
                                         <span>{data.deliveryReadyItem.optionInfo}</span>
                                     </DataText>
-                                    <DataText className="col">
+                                    <DataText className="col option-code-btn" onClick={(e) => __handleEventControl().changeDeliveryReadyItem().changeOptionManagementCode(e, data.deliveryReadyItem)}>
                                         <span>{data.deliveryReadyItem.optionManagementCode}</span>
                                     </DataText>
                                     <DataText className="col">
