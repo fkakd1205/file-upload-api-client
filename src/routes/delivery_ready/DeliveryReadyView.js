@@ -161,6 +161,7 @@ const DateSelector = styled.button`
     width: 230px;
     height: 4vh;
     margin-right: 15px;
+    transition: opacity 0.1s linear;
 
     &:hover {
         opacity: 0.6;
@@ -172,6 +173,7 @@ const DatePickerButton = styled.div`
     text-align: center;
     padding: 10px;
     background-color: rgb(229, 232, 237);
+    transition: opacity 0.1s linear;
     &:hover {
         opacity: 0.6;
         cursor: pointer;
@@ -190,6 +192,12 @@ const CancelBtn = styled.button`
     overflow: auto;
     border-right: 1px solid #f5f5f5;
     background-color: inherit;
+    transition: opacity 0.1s linear;
+
+    &:hover {
+        opacity: 0.6;
+        cursor: pointer;
+    }
 `;
 
 const GroupTitle = styled.div`
@@ -279,6 +287,7 @@ const ChangeBtn = styled.button`
     border: 1px solid #a7a7a7;
     overflow: auto;
     height: 4vh;
+    transition: opacity 0.1s linear;
     &:hover {
         opacity: 0.6;
         cursor: pointer;

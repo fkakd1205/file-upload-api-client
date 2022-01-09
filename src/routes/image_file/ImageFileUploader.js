@@ -2,38 +2,31 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import styled from 'styled-components';
 import Image from './Image';
-import Dialog from '@material-ui/core/Dialog';
-import MuiDialogTitle from '@material-ui/core/DialogTitle';
-import MuiDialogContent from '@material-ui/core/DialogContent';
+import ImageInfoModal from "./modal/ImageInfoModal";
 
 const Container = styled.div`
-    font-family: "gowun";
+    padding-bottom: 100px;
 `;
 
 const Header = styled.div`
-    color: white;
-    width: 100%;
-    height: 55px;
-    display: flex;
-    background-color: rgba(0, 0, 0, 0.4);
-    box-shadow: 0px 1px 7px 4px rgba(0, 0, 2, 0.2);
-    text-align: right;
+    background-color: #95a5d3;
+    box-shadow: 0px 1px 3px 1px rgb(179 199 219);
 `;
 
 const Form = styled.form`
     width: 100%;
-    margin: 10px;
-    margin-right: 20px;
+    padding: 10px;
 `;
 
 const UploadButton = styled.label`
     display: inline-block;
     padding: 6px;
-    color: #999;
-    vertical-align: middle;
+    color: #3D4756;
+    padding: 13px 20px;
     background-color: #fdfdfd;
-    border-radius: 3px;
+    border-radius: 5px;
     transition: opacity 0.1s linear;
+
     &:hover {
         opacity: 0.8;
         cursor: pointer;
@@ -46,33 +39,30 @@ const Input = styled.input`
     display: none;
 `;
 
-const ImageContainer = styled.ul`
+const BodyContainer = styled.div`
+    margin: 10px;
+    padding: 10px;
+    background-color: #f0f3f9;
+    border-radius: 10px;
+    min-height: 80vh;
+    max-height: 80vh;
+    overflow: auto;
+`;
+
+const ImageContainer = styled.div`
     margin-top: 25px;
     display: grid;
     grid-template-columns: repeat(auto-fill, 200px);
     grid-gap: 50px;
     list-style: none;
+    place-content: center;
 
     @media only screen and (max-width:1010px){
         grid-gap: 30px;
     }
 `;
 
-// const ImageFile = styled.img`
-//     width: 100%;
-//     height: 200px;
-//     background-size: cover;
-//     border-radius: 5px;
-//     background-position: center center;
-//     transition: opacity 0.1s linear;
-
-//     @media only screen and (max-width:1010px){
-//         width: 80%;
-//         height: 180px;
-//     }
-// `;
-
-const Item = styled.li`
+const Item = styled.div`
     margin-bottom: 10px;
     position: relative;
     &:hover {
@@ -82,11 +72,11 @@ const Item = styled.li`
 `;
 
 
-const Home3 = () => {
-    
-    const [images, setImages] = useState(null);
-    const [open, setOpen] = React.useState(false);
+const ImageFileUploader = () => {
+    const [uploadedImageList, setUploadedImageList] = useState(null);
+    const [imageInfoModalOpen, setImageInfoModalOpen] = useState(false);
     const [imageInfo, setImageInfo] = useState(null);
+    const [selectedImageData, setSelectedImageData] = useState(null);
 
     useEffect(() => {
     }, [])
@@ -114,10 +104,10 @@ const Home3 = () => {
                 await axios.post("/api/v1/file-upload/uploadFilesToCloud", formData, config)
                     .then(res => {
                         if (res.status === 200 && res.data && res.data.message === 'success') {
-                            if (images && images.length >= 1) {
-                                setImages(images.concat(res.data.data));
+                            if (uploadedImageList && uploadedImageList.length >= 1) {
+                                setUploadedImageList(uploadedImageList.concat(res.data.data));
                             } else {
-                                setImages(res.data.data);
+                                setUploadedImageList(res.data.data);
                             }
                         }
                     })
@@ -139,14 +129,16 @@ const Home3 = () => {
                     }
                 }
             },
-            imageInfo: function (e) {
+            imageInfo: function () {
                 return {
-                    handleOpen: function (e) {
-                        setImageInfo(e.target.title);
-                        setOpen(true);
+                    open: function (e, image) {
+                        e.preventDefault();
+
+                        setSelectedImageData(image);
+                        setImageInfoModalOpen(true);
                     },
-                    handleClose: function () {
-                        setOpen(false);
+                    close: function () {
+                        setImageInfoModalOpen(false);
                     }
                 }
             }
@@ -162,27 +154,31 @@ const Home3 = () => {
                         <Input id="upload-file-input" type="file" accept="image/*" onChange={(e) => __handleEventControl().uploadFileData().submit(e)} multiple />
                     </Form>
                 </Header>
-                <ImageContainer>
-                    {images && images.map((r, index) => {
-                        return (
-                            <Item key={index} onClick={(e) => __handleEventControl().imageInfo().handleOpen(e)}>
-                                <Image image={r} index={index}/>
-                            </Item>
-                        )
-                    })}
-                </ImageContainer>
-                <Dialog onClose={() => __handleEventControl().imageInfo().handleClose()} aria-labelledby="customized-dialog-title" open={open}>
-                    <MuiDialogTitle id="customized-dialog-title" onClose={() => __handleEventControl().imageInfo().handleClose()}>
-                         Info
-                    </MuiDialogTitle>
-                    <MuiDialogContent dividers>
-                        {imageInfo}
-                    </MuiDialogContent>
-                </Dialog>
+                <BodyContainer>
+                    <ImageContainer>
+                        {uploadedImageList?.map((image, index) => {
+                            return (
+                                <Item key={index} onClick={(e) => __handleEventControl().imageInfo().open(e, image)}>
+                                    <Image image={image} index={index} />
+                                </Item>
+                            )
+                        })}
+                    </ImageContainer>
+                </BodyContainer>
             </Container>
+
+            {imageInfoModalOpen &&
+                <ImageInfoModal
+                    open={imageInfoModalOpen}
+                    onClose={(e) => __handleEventControl().imageInfo().close(e)}
+                    selectedImageData={selectedImageData}
+
+                    __handleEventControl={__handleEventControl}
+                ></ImageInfoModal>
+            }
         </>
     );
 
 }
 
-export default Home3;
+export default ImageFileUploader;
