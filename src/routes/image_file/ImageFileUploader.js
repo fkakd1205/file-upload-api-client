@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import styled from 'styled-components';
+import BackdropLoading from "../loading/BackdropLoading";
 import Image from './Image';
 import ImageInfoModal from "./modal/ImageInfoModal";
 
@@ -77,6 +78,7 @@ const ImageFileUploader = () => {
     const [imageInfoModalOpen, setImageInfoModalOpen] = useState(false);
     const [imageInfo, setImageInfo] = useState(null);
     const [selectedImageData, setSelectedImageData] = useState(null);
+    const [backdropLoading, setBackdropLoading] = useState(false);
 
     useEffect(() => {
     }, [])
@@ -104,7 +106,7 @@ const ImageFileUploader = () => {
                 await axios.post("/api/v1/file-upload/uploadFilesToCloud", formData, config)
                     .then(res => {
                         if (res.status === 200 && res.data && res.data.message === 'success') {
-                            if (uploadedImageList && uploadedImageList.length >= 1) {
+                            if (uploadedImageList?.length >= 1) {
                                 setUploadedImageList(uploadedImageList.concat(res.data.data));
                             } else {
                                 setUploadedImageList(res.data.data);
@@ -125,7 +127,10 @@ const ImageFileUploader = () => {
                 return {
                     submit: async function (e) {
                         e.preventDefault();
+                    
+                        loadingControl().open();
                         await __handleDataConnect().uploadFilesToCloud(e);
+                        loadingControl().close();
                     }
                 }
             },
@@ -141,6 +146,17 @@ const ImageFileUploader = () => {
                         setImageInfoModalOpen(false);
                     }
                 }
+            }
+        }
+    }
+
+    const loadingControl = () => {
+        return {
+            open : function () {
+                setBackdropLoading(true);
+            },
+            close: function () {
+                setBackdropLoading(false);
             }
         }
     }
@@ -176,6 +192,9 @@ const ImageFileUploader = () => {
                     __handleEventControl={__handleEventControl}
                 ></ImageInfoModal>
             }
+
+            {/* Backdrop */}
+            <BackdropLoading open={backdropLoading} />
         </>
     );
 

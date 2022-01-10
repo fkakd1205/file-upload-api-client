@@ -38,11 +38,12 @@ const InfoTitle = styled.div`
 `;
 
 const DataWrapper = styled.div`
-    width: 100%;
+    width: 80%;
 `;
 
 const InfoData = styled.span`
-    overflow: auto;
+    height: auto;
+    padding: 2px;
 `;
 
 const CloseBtn = styled.span`
